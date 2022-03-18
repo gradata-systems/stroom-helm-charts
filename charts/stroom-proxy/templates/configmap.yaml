@@ -83,8 +83,10 @@ data:
           timeZone: UTC
           logFormat: "%-6level [%d{\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\",UTC}] [%t] %logger - %X{code} %msg %n"
 
+    mode: "proxy"
+
     proxyConfig:
-      useDefaultOpenIdCredentials: false
+      proxyContentDir: "${CONTENT_DIR:-/stroom-proxy/content}"
 
       feedStatus:
         url: "${FEED_STATUS_URL:-http://stroom:8080/api/feedStatus/v1}"
@@ -105,15 +107,10 @@ data:
               trustStoreType: "${FORWARDING_TRUSTSTORE_TYPE:-JKS}"
               hostnameVerificationEnabled: ${FORWARDING_HOST_VERIFICATION_ENABLED:-true}
 
-      path:
-        home: "/stroom-proxy/"
-        temp: "/tmp/stroom-proxy"
-
       proxyRepositoryConfig:
         storingEnabled: ${STORING_ENABLED:-true}
         repoDir: "${REPO_DIR:-/stroom-proxy/repo}"
-        repoDir: "${REPO_DIR:-/stroom-proxy/repo}"
-        format: "${executionUuid}/${year}-${month}-${day}/${feed}/${pathId}/${id}"
+        repositoryFormat: "${executionUuid}/${year}-${month}-${day}/${feed}/${pathId}/${id}"
         # cleanupFrequency: 1h
         # lockDeleteAge: 1h
         # dirCleanDelay: 10s
@@ -126,8 +123,7 @@ data:
         maxStreamSize: "${REPO_MAX_STREAM_SIZE:-1G}"
         maxAggregation: "${REPO_MAX_AGGREGATION:-1000}"
 
-      # restClient is used for making feed status REST calls
-      restClient:
+      jerseyClient:
         timeout: "${JERSEY_TIMEOUT:-10s}"
         connectionTimeout: "${JERSEY_CONN_TIMEOUT:-10s}"
         timeToLive: "${JERSEY_TIME_TO_LIVE:-1h}"

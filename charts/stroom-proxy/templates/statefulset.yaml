@@ -21,6 +21,19 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: take-ownership
+          image: {{ .Values.busybox.repository }}
+          command:
+            - sh
+            - -c
+            - |
+              chown 1000:1000 /stroom-proxy/*
+          volumeMounts:
+            {{- include "stroom-proxy.localDataVolumeMounts" . | nindent 12 }}
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
       containers:
         - name: {{ .Chart.Name }}
           env:
@@ -57,15 +70,7 @@ spec:
             - mountPath: /stroom-proxy/config
               name: config
               readOnly: true
-            - mountPath: /stroom-proxy/content
-              subPath: content
-              name: data
-            - mountPath: /stroom-proxy/logs
-              subPath: logs
-              name: data
-            - mountPath: /stroom-proxy/repo
-              subPath: repo
-              name: data
+            {{- include "stroom-proxy.localDataVolumeMounts" . | nindent 12 }}
             {{- with .Values.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

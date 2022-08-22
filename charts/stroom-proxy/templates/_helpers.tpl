@@ -69,11 +69,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- define "stroom-proxy.localDataVolumeMounts" -}}
 - mountPath: /stroom-proxy/content
   subPath: content
-  name: local-data
+  name: data
 - mountPath: /stroom-proxy/logs
   subPath: logs
-  name: local-data
+  name: data
 - mountPath: /stroom-proxy/repo
   subPath: repo
-  name: local-data
+  name: data
 {{- end }}

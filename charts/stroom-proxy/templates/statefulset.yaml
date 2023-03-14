@@ -71,6 +71,9 @@ spec:
               name: config
               readOnly: true
             {{- include "stroom-proxy.localDataVolumeMounts" . | nindent 12 }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

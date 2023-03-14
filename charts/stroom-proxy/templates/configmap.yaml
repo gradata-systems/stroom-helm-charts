@@ -119,9 +119,6 @@ data:
         home: "/stroom-proxy/"
         temp: "/tmp/stroom-proxy"
 
-      logStream:
-        metaKeys: "guid,feed,system,environment,remotehost,remoteaddress,remotedn,remotecertexpiry"
-
       db:
         dbDir: db
 

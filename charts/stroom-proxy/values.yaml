@@ -85,7 +85,7 @@ keyStore:
   type: PKCS12 # PKCS12|JKS
   secretRef:
     name: ""
-    key: keystore.jks
+    key: keystore.p12
   passwordSecretRef:
     name: ""
     key: ""
@@ -94,7 +94,7 @@ trustStore:
   type: PKCS12 # PKCS12, JKS
   secretRef:
     name: ""
-    key: truststore.jks
+    key: truststore.p12
   passwordSecretRef:
     name: ""
     key: ""
@@ -132,6 +132,11 @@ extraVolumes: [ ]
 extraVolumeMounts: [ ]
 #  - mountPath: /stroom-proxy/data
 #    name: data
+
+tls:
+  # Enable TLS for the backend proxy service
+  enabled: false
+  secretName: ""
 
 ingress:
   enabled: true

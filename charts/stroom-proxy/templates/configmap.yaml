@@ -10,8 +10,17 @@ data:
       applicationContextPath: /
       adminContextPath: /proxyAdmin
       applicationConnectors:
-        - type: http
+        - type: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
           port: {{ .Values.ports.app }}
+          {{- if .Values.tls.enabled }}
+          keyStoreType: {{ .Values.keyStore.type }}
+          keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
+          keyStorePassword: ${KEYSTORE_PASSWORD}
+          trustStoreType: {{ .Values.trustStore.type }}
+          trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
+          trustStorePassword: ${TRUSTSTORE_PASSWORD}
+          validateCerts: false
+          {{- end }}
       adminConnectors:
         - type: http
           port: {{ .Values.ports.admin }}

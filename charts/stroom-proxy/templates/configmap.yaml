@@ -126,7 +126,7 @@ data:
 
       # restClient is used for making feed status REST calls
       restClient:
-        {{- with .Values.webServer }}
+        {{- with .Values.restClient }}
         timeout: {{ .timeout | quote }}
         connectionTimeout: {{ .connectionTimeout | quote }}
         timeToLive: {{ .timeToLive | quote }}

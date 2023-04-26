@@ -94,7 +94,7 @@ trustStore:
     name: ""
     key: ""
 
-webServer:
+restClient:
   timeout: 10s
   connectionTimeout: 10s
   timeToLive: 1h
@@ -102,8 +102,6 @@ webServer:
   maxConnectionsPerRoute: 1024
   keepAlive: 0ms
   retries: 0
-  verifyHostname: true
-  trustSelfSignedCertificates: false
 
 ports:
   app: 8090

@@ -27,19 +27,25 @@ logging:
 
 stroom:
   baseUri: http://stroom-node.stroom.svc:8080
+  tls:
+    verifyHostName: true
+    trustSelfSignedCertificates: false
 
   paths:
     datafeed: /stroom/noauth/datafeed
     feedStatus: /api/feedStatus/v1
 
-  # Stroom API key to enable feed status lookups
-  apiKeySecretRef:
-    name: ""
-    key: ""
+  # For making feed status API calls
+  feedStatus:
+    enabled: true
+    connectionTimeout: 1s
+    timeout: 3s
+    timeToLive: 1h
 
-  tls:
-    verifyHostName: true
-    trustSelfSignedCertificates: false
+    # Stroom API key to enable feed status lookups
+    apiKeySecretRef:
+      name: ""
+      key: ""
 
 forwarding:
   # Whether to forward to another proxy. If disabled, `clientKeyStore` and `trustStore` options are ignored.
@@ -92,11 +98,6 @@ trustStore:
   passwordSecretRef:
     name: ""
     key: ""
-
-restClient:
-  connectionTimeout: PT3S
-  verifyHostname: true
-  trustSelfSignedCertificates: false
 
 ports:
   app: 8090

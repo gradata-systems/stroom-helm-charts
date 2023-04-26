@@ -30,6 +30,30 @@ data:
             logFormat: '%h %l "%u" [%t] "%r" %s %b "%i{Referer}" "%i{User-Agent}" %D'
         {{- end }}
 
+    {{- if .Values.stroom.feedStatus.enabled }}
+    jerseyClients:
+      default:
+        {{- with .Values.stroom.feedStatus }}
+        timeout: {{ .timeout }}
+        connectionTimeout: {{ .connectionTimeout }}
+        timeToLive: {{ .timeToLive }}
+        cookiesEnabled: false
+        maxConnections: 1024
+        maxConnectionsPerRoute: 1024
+        keepAlive: 0ms
+        retries: 0
+        {{- end }}
+        tls:
+          keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
+          keyStorePassword: "${KEYSTORE_PASSWORD}"
+          keyStoreType: {{ .Values.keyStore.type }}
+          trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
+          trustStorePassword: "${TRUSTSTORE_PASSWORD}"
+          trustStoreType: {{ .Values.trustStore.type }}
+          verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
+          trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
+    {{- end }}
+
     logging:
       {{- with .Values.logging }}
       level: {{ .level }}
@@ -127,22 +151,6 @@ data:
         repoDir: repo
         storingEnabled: {{ .storing.enabled }}
         {{- end }}
-
-      # restClient is used for making feed status REST calls
-      restClient:
-        {{- with .Values.restClient }}
-        chunkedEncodingEnabled: true
-        connectionTimeout: {{ .connectionTimeout | quote }}
-        {{- end }}
-        tls:
-          keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
-          keyStorePassword: "${KEYSTORE_PASSWORD}"
-          keyStoreType: {{ .Values.keyStore.type }}
-          trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
-          trustStorePassword: "${TRUSTSTORE_PASSWORD}"
-          trustStoreType: {{ .Values.trustStore.type }}
-          verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
-          trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
 
       {{- with .Values.threads }}
       threads:

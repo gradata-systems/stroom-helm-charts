@@ -47,10 +47,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   {{- toYaml .Values.trustStore.passwordSecretRef | nindent 18 }}
+            {{- if .Values.stroom.feedStatus.enabled }}
             - name: FEED_STATUS_API_KEY
               valueFrom:
                 secretKeyRef:
-                  {{- toYaml .Values.stroom.apiKeySecretRef | nindent 18 }}
+                  {{- toYaml .Values.stroom.feedStatus.apiKeySecretRef | nindent 18 }}
+            {{- end }}
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

@@ -54,6 +54,8 @@ forwarding:
   # Override the forwarding URL. By default, `{stroom.baseUri}/stroom/noauth/datafeed` is used.
   url: ""
 
+  chunkSize: 0
+
   tls:
     verifyHostName: true
 

@@ -133,11 +133,13 @@ data:
         apiKey: "${FEED_STATUS_API_KEY}"
 
       {{- if .Values.forwarding.enabled }}
-      forwardDestinations:
-        - type: post
-          name: stroom
+      forwardHttpDestinations:
+        - name: stroom
           forwardUrl: {{ include "stroom-proxy.forwardUrl" . | quote }}
           enabled: {{ .Values.forwarding.enabled }}
+          {{- with .Values.forwarding.chunkSize }}
+          forwardChunkSize: {{ . }}
+          {{- end }}
           sslConfig:
             keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
             keyStorePassword: "${KEYSTORE_PASSWORD}"

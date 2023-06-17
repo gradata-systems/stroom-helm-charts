@@ -165,7 +165,7 @@ data:
       threads:
         examineSourceThreadCount: {{ .examineSource }}
         forwardRetryThreadCount: {{ .forwardRetry }}
-        forwardThreadCount: {{ .forwardRetry }}
+        forwardThreadCount: {{ .forwarding }}
       {{- end }}
 
       useDefaultOpenIdCredentials: false

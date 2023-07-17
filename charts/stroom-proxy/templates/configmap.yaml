@@ -9,6 +9,9 @@ data:
     server:
       applicationContextPath: /
       adminContextPath: /proxyAdmin
+      {{- with .Values.serverProperties }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       applicationConnectors:
         - type: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
           port: {{ .Values.ports.app }}
@@ -103,6 +106,9 @@ data:
         forwardingEnabled: {{ .Values.forwarding.enabled }}
         forwardDestinations:
           - forwardUrl: {{ include "stroom-proxy.forwardUrl" . }}
+            {{- with .Values.forwarding.maxChunkSize }}
+            forwardChunkSize: {{ . | int64 }}
+            {{- end }}
             sslConfig:
               keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
               keyStorePassword: "${KEYSTORE_PASSWORD}"

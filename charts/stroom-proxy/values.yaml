@@ -51,6 +51,9 @@ forwarding:
   # Perform X.509 host verification
   hostVerificationEnabled: true
 
+  # Maximum chunk size in bytes. Set to `0` to disable chunked encoding
+  maxChunkSize: 1048576
+
 repository:
   # Folder structure
   format: "${pathId}/${id}"
@@ -107,6 +110,10 @@ ports:
   app: 8090
   admin: 8091
   debug: 10766
+
+# Override Dropwizard server properties: https://www.dropwizard.io/en/latest/manual/configuration.html#all
+serverProperties: { }
+#  idleThreadTimeout: 1 minute
 
 volumeClaims:
   # Local proxy storage. Recommend using fast storage tier especially when aggregation is enabled

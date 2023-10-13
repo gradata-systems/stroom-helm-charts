@@ -160,3 +160,31 @@ data:
           trustStoreType: {{ .Values.trustStore.type }}
           verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
           trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
+  {{- if .Values.logSender.enabled }}
+  log-sender-crontab.txt: |-
+    {{- with .Values.logSender }}
+    {{ .cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/app" {{ .destination.feeds.app | quote }} "${DESTINATION_URL}" \
+    --system {{ .attributes.system | quote }} \
+    --environment {{ .attributes.environment | quote }} \
+    --file-regex "${FILE_REGEX}" \
+    --delete-after-sending --no-secure > /dev/stdout
+
+    {{ .cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/access" {{ .destination.feeds.access | quote }} "${DESTINATION_URL}" \
+    --system {{ .attributes.system | quote }} \
+    --environment {{ .attributes.environment | quote }} \
+    --file-regex "${FILE_REGEX}" \
+    --delete-after-sending --no-secure > /dev/stdout
+
+    {{ .cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/receive" {{ .destination.feeds.receive | quote }} "${DESTINATION_URL}" \
+    --system {{ .attributes.system | quote }} \
+    --environment {{ .attributes.environment | quote }} \
+    --file-regex "${FILE_REGEX}" \
+    --delete-after-sending --no-secure > /dev/stdout
+
+    {{ .cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/send" {{ .destination.feeds.send | quote }} "${DESTINATION_URL}" \
+    --system {{ .attributes.system | quote }} \
+    --environment {{ .attributes.environment | quote }} \
+    --file-regex "${FILE_REGEX}" \
+    --delete-after-sending --no-secure > /dev/stdout
+    {{- end }}
+  {{- end }}

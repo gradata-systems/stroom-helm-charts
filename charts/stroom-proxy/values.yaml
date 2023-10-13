@@ -20,10 +20,35 @@ logging:
   level: WARN
   archive:
     enabled: true
-    maxFileCount: 90
+    maxFileCount: 3600
   timeZone: UTC
   baseDir: /stroom-proxy/logs
-  fileDateFormat: yyyy-MM-dd
+  fileDateFormat: yyyy-MM-dd-HH-mm
+
+logSender:
+  enabled: true
+  image:
+    repository: gchq/stroom-log-sender
+    tag: v2.2.0
+  cronSchedule: "* * * * *"
+  fileRegex: .*\.gz$
+  attributes:
+    system: Stroom Proxy v7
+    environment: Production
+  destination:
+    url: https://stroom.example.com/stroom/datafeed
+    feeds:
+      app: STROOM_PROXY-APP-EVENTS
+      access: STROOM_PROXY-ACCESS-EVENTS
+      receive: STROOM_PROXY-RECEIVE-EVENTS
+      send: STROOM_PROXY-SEND-EVENTS
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 1000m
+      memory: 64Mi
 
 stroom:
   baseUri: http://stroom-node.stroom.svc:8080

@@ -117,7 +117,7 @@ spec:
             - name: LOG_SENDER_HEADERS
               value: /stroom-log-sender/config/headers.txt
             - name: DESTINATION_URL
-              value: {{ .Values.logSender.destination.url | quote }}
+              value: {{ .Values.logSender.destinationUrl | quote }}
             - name: BASE_LOGS_DIR
               value: /stroom-log-sender/source-logs
             - name: FILE_REGEX

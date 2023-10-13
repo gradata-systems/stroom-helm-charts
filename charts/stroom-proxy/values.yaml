@@ -32,18 +32,17 @@ logSender:
     tag: v2.2.0
   cronSchedule: "* * * * *"
   fileRegex: .*\.gz$
+  sources: # Map of subdirectories to feed names
+    app: STROOM_PROXY-APP-EVENTS
+    access: STROOM_PROXY-ACCESS-EVENTS
+    receive: STROOM_PROXY-RECEIVE-EVENTS
+    send: STROOM_PROXY-SEND-EVENTS
   attributes:
     system: Stroom Proxy v7
     environment: Production
   extraHeaders: { }
 #    SecurityDomain: Unclassified
-  destination:
-    url: https://stroom.example.com/stroom/datafeed
-    feeds:
-      app: STROOM_PROXY-APP-EVENTS
-      access: STROOM_PROXY-ACCESS-EVENTS
-      receive: STROOM_PROXY-RECEIVE-EVENTS
-      send: STROOM_PROXY-SEND-EVENTS
+  destinationUrl: https://stroom.example.com/stroom/datafeed
   resources:
     requests:
       cpu: 100m

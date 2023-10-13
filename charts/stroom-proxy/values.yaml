@@ -35,6 +35,8 @@ logSender:
   attributes:
     system: Stroom Proxy v7
     environment: Production
+  extraHeaders: { }
+#    SecurityDomain: Unclassified
   destination:
     url: https://stroom.example.com/stroom/datafeed
     feeds:

@@ -114,6 +114,8 @@ spec:
           env:
             - name: LOG_SENDER_SCRIPT
               value: /stroom-log-sender/send_to_stroom.sh
+            - name: LOG_SENDER_HEADERS
+              value: /stroom-log-sender/config/headers.txt
             - name: DESTINATION_URL
               value: {{ .Values.logSender.destination.url | quote }}
             - name: BASE_LOGS_DIR
@@ -127,6 +129,10 @@ spec:
             - mountPath: /stroom-log-sender/config/crontab.txt
               name: config
               subPath: log-sender-crontab.txt
+              readOnly: true
+            - mountPath: /stroom-log-sender/config/headers.txt
+              name: config
+              subPath: log-sender-headers.txt
               readOnly: true
           securityContext:
             runAsUser: 0

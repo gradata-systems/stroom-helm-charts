@@ -4,9 +4,10 @@ replicaCount: 2
 
 stroom:
   baseUri: http://stroom-node-data-http.stroom.svc:8080
-  apiKeySecretRef:
-    name: stroom-proxy-api-key
-    key: stroom_api_key
+  feedStatus:
+    apiKeySecretRef:
+      name: stroom-proxy-api-key
+      key: stroom_api_key
 
 forwarding:
   enabled: true

@@ -99,8 +99,13 @@ data:
 
     proxyConfig:
       feedStatus:
+        {{- if .Values.stroom.feedStatus.enabled }}
         url: {{ include "stroom-proxy.feedStatusUrl" . | quote }}
         apiKey: "${FEED_STATUS_API_KEY}"
+        {{- else }}
+        url: ""
+        apiKey: ""
+        {{- end }}
 
       forwardStreamConfig:
         forwardingEnabled: {{ .Values.forwarding.enabled }}
@@ -160,7 +165,7 @@ data:
           trustStoreType: {{ .Values.trustStore.type }}
           verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
           trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
-  {{- if .Values.logSender.enabled }}
+    {{- if .Values.logSender.enabled }}
   log-sender-headers.txt: |
     {{- range $key, $value := .Values.logSender.extraHeaders }}
     {{ printf "%s:%s" $key $value }}

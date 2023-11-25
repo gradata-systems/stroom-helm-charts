@@ -56,10 +56,12 @@ stroom:
   paths:
     datafeed: /stroom/noauth/datafeed
     feedStatus: /api/feedStatus/v1
-  # Stroom API key to enable feed status lookups
-  apiKeySecretRef:
-    name: ""
-    key: ""
+  # Stroom API key to enable feed status lookups.
+  feedStatus:
+    enabled: true
+    apiKeySecretRef:
+      name: ""
+      key: ""
   tls:
     verifyHostName: true
     trustSelfSignedCertificates: false

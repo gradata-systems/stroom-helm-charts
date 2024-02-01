@@ -143,6 +143,8 @@ ports:
 serverProperties: { }
 #  idleThreadTimeout: 1 minute
 
+takeOwnershipOnStartup: false
+
 volumeClaims:
   # Local proxy storage. Recommend using fast storage tier especially when aggregation is enabled
   data: { }

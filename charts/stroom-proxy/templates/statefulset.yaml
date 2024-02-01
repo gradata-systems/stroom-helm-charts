@@ -21,6 +21,7 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.takeOwnershipOnStartup }}
       initContainers:
         - name: take-ownership
           image: {{ .Values.busybox.repository }}
@@ -34,6 +35,7 @@ spec:
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           env:

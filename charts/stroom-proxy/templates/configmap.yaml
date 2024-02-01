@@ -9,8 +9,11 @@ data:
     server:
       applicationContextPath: /
       adminContextPath: /proxyAdmin
+      {{- with .Values.serverProperties }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
       applicationConnectors:
-        - type: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
+        - type: http
           port: {{ .Values.ports.app }}
           {{- if .Values.tls.enabled }}
           keyStoreType: {{ .Values.keyStore.type }}
@@ -129,16 +132,20 @@ data:
         {{- end }}
 
       feedStatus:
+        {{- if .Values.stroom.feedStatus.enabled }}
         url: {{ include "stroom-proxy.feedStatusUrl" . | quote }}
         apiKey: "${FEED_STATUS_API_KEY}"
+        {{- else }}
+        url: ""
+        apiKey: ""
+        {{- end }}
 
       {{- if .Values.forwarding.enabled }}
       forwardHttpDestinations:
-        - name: stroom
-          forwardUrl: {{ include "stroom-proxy.forwardUrl" . | quote }}
+        - forwardUrl: {{ include "stroom-proxy.forwardUrl" . }}
           enabled: {{ .Values.forwarding.enabled }}
-          {{- with .Values.forwarding.chunkSize }}
-          forwardChunkSize: {{ . }}
+          {{- with .Values.forwarding.maxChunkSize }}
+          forwardChunkSize: {{ . | int64 }}
           {{- end }}
           sslConfig:
             keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
@@ -171,3 +178,21 @@ data:
       {{- end }}
 
       useDefaultOpenIdCredentials: false
+
+  {{- if .Values.logSender.enabled }}
+    log-sender-headers.txt: |
+      {{- range $key, $value := .Values.logSender.extraHeaders }}
+      {{ printf "%s:%s" $key $value }}
+      {{- end }}
+
+    log-sender-crontab.txt: |-
+      {{- range $subDir, $feedName := .Values.logSender.sources }}
+      {{ $.Values.logSender.cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/{{ $subDir }}" {{ $feedName | quote }} "${DESTINATION_URL}" \
+      --file-regex "${FILE_REGEX}" \
+      --system {{ $.Values.logSender.attributes.system | quote }} \
+      --environment {{ $.Values.logSender.attributes.environment | quote }} \
+      -H "OriginalHost:${HOSTNAME}" \
+      --headers "${LOG_SENDER_HEADERS}" \
+      --delete-after-sending --no-secure > /dev/stdout
+      {{- end }}
+    {{- end }}

@@ -69,10 +69,14 @@ spec:
               name: truststore
               readOnly: true
             {{- end }}
-            - mountPath: /stroom-proxy/config
+            - mountPath: /stroom-proxy/config/config.yml
               name: config
+              subPath: config.yml
               readOnly: true
             {{- include "stroom-proxy.localDataVolumeMounts" . | nindent 12 }}
+            {{- with .Values.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -105,6 +109,41 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+        {{- if .Values.logSender.enabled }}
+        - name: log-sender
+          image: "{{ .Values.logSender.image.repository }}:{{ .Values.logSender.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOG_SENDER_SCRIPT
+              value: /stroom-log-sender/send_to_stroom.sh
+            - name: LOG_SENDER_HEADERS
+              value: /stroom-log-sender/config/headers.txt
+            - name: DESTINATION_URL
+              value: {{ .Values.logSender.destinationUrl | quote }}
+            - name: BASE_LOGS_DIR
+              value: /stroom-log-sender/source-logs
+            - name: FILE_REGEX
+              value: {{ .Values.logSender.fileRegex | quote }}
+          volumeMounts:
+            - mountPath: /stroom-log-sender/source-logs
+              name: data
+              subPath: logs
+            - mountPath: /stroom-log-sender/config/crontab.txt
+              name: config
+              subPath: log-sender-crontab.txt
+              readOnly: true
+            - mountPath: /stroom-log-sender/config/headers.txt
+              name: config
+              subPath: log-sender-headers.txt
+              readOnly: true
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            privileged: true
+          resources:
+            {{- toYaml .Values.logSender.resources | nindent 12 }}
+        {{- end }}
       volumes:
         - name: keystore
           secret:

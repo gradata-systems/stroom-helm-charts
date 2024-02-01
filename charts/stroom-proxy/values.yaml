@@ -20,32 +20,54 @@ logging:
   level: WARN
   archive:
     enabled: true
-    maxFileCount: 90
+    maxFileCount: 3600
   timeZone: UTC
   baseDir: /stroom-proxy/logs
-  fileDateFormat: yyyy-MM-dd
+  fileDateFormat: yyyy-MM-dd-HH-mm
+
+logSender:
+  enabled: true
+  image:
+    repository: gchq/stroom-log-sender
+    tag: v2.2.0
+  cronSchedule: "* * * * *"
+  fileRegex: .*\.gz$
+  sources: # Map of subdirectories to feed names
+    app: STROOM_PROXY-APP-EVENTS
+    access: STROOM_PROXY-ACCESS-EVENTS
+    receive: STROOM_PROXY-RECEIVE-EVENTS
+    send: STROOM_PROXY-SEND-EVENTS
+  attributes:
+    system: Stroom Proxy v7
+    environment: Production
+  extraHeaders: { }
+#    SecurityDomain: Unclassified
+  destinationUrl: https://stroom.example.com/stroom/datafeed
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 1000m
+      memory: 64Mi
 
 stroom:
   baseUri: http://stroom-node.stroom.svc:8080
-  tls:
-    verifyHostName: true
-    trustSelfSignedCertificates: false
-
   paths:
     datafeed: /stroom/noauth/datafeed
     feedStatus: /api/feedStatus/v1
-
-  # For making feed status API calls
   feedStatus:
     enabled: true
     connectionTimeout: 1s
     timeout: 3s
     timeToLive: 1h
-
-    # Stroom API key to enable feed status lookups
+    # Stroom API key to enable feed status lookups.
     apiKeySecretRef:
       name: ""
       key: ""
+  tls:
+    verifyHostName: true
+    trustSelfSignedCertificates: false
 
 forwarding:
   # Whether to forward to another proxy. If disabled, `clientKeyStore` and `trustStore` options are ignored.
@@ -54,7 +76,8 @@ forwarding:
   # Override the forwarding URL. By default, `{stroom.baseUri}/stroom/noauth/datafeed` is used.
   url: ""
 
-  chunkSize: 0
+  # Maximum chunk size in bytes. Set to `0` to disable chunked encoding
+  maxChunkSize: 1048576
 
   tls:
     verifyHostName: true
@@ -100,6 +123,15 @@ trustStore:
   passwordSecretRef:
     name: ""
     key: ""
+
+restClient:
+  timeout: 10s
+  connectionTimeout: 10s
+  timeToLive: 1h
+  maxConnections: 1024
+  maxConnectionsPerRoute: 1024
+  keepAlive: 0ms
+  retries: 0
 
 ports:
   app: 8090

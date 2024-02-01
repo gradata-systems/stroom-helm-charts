@@ -13,7 +13,7 @@ data:
       {{- toYaml . | nindent 6 }}
       {{- end }}
       applicationConnectors:
-        - type: http
+        - type: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
           port: {{ .Values.ports.app }}
           {{- if .Values.tls.enabled }}
           keyStoreType: {{ .Values.keyStore.type }}
@@ -122,6 +122,11 @@ data:
         {{- end }}
 
     proxyConfig:
+      {{- with .Values.receive }}
+      receive:
+        authenticationRequired: {{ .authenticationRequired }}
+        certificateAuthenticationEnabled: {{ .certificateAuthentication.enabled }}
+      {{- end }}
       aggregator:
         {{- with .Values.repository.aggregation }}
         enabled: {{ .enabled }}
@@ -142,7 +147,8 @@ data:
 
       {{- if .Values.forwarding.enabled }}
       forwardHttpDestinations:
-        - forwardUrl: {{ include "stroom-proxy.forwardUrl" . }}
+        - name: stroom
+          forwardUrl: {{ include "stroom-proxy.forwardUrl" . }}
           enabled: {{ .Values.forwarding.enabled }}
           {{- with .Values.forwarding.maxChunkSize }}
           forwardChunkSize: {{ . | int64 }}
@@ -177,22 +183,20 @@ data:
         forwardThreadCount: {{ .forwarding }}
       {{- end }}
 
-      useDefaultOpenIdCredentials: false
-
-  {{- if .Values.logSender.enabled }}
-    log-sender-headers.txt: |
-      {{- range $key, $value := .Values.logSender.extraHeaders }}
-      {{ printf "%s:%s" $key $value }}
-      {{- end }}
-
-    log-sender-crontab.txt: |-
-      {{- range $subDir, $feedName := .Values.logSender.sources }}
-      {{ $.Values.logSender.cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/{{ $subDir }}" {{ $feedName | quote }} "${DESTINATION_URL}" \
-      --file-regex "${FILE_REGEX}" \
-      --system {{ $.Values.logSender.attributes.system | quote }} \
-      --environment {{ $.Values.logSender.attributes.environment | quote }} \
-      -H "OriginalHost:${HOSTNAME}" \
-      --headers "${LOG_SENDER_HEADERS}" \
-      --delete-after-sending --no-secure > /dev/stdout
-      {{- end }}
+{{- if .Values.logSender.enabled }}
+  log-sender-headers.txt: |
+    {{- range $key, $value := .Values.logSender.extraHeaders }}
+    {{ printf "%s:%s" $key $value }}
     {{- end }}
+
+  log-sender-crontab.txt: |-
+    {{- range $subDir, $feedName := .Values.logSender.sources }}
+    {{ $.Values.logSender.cronSchedule }} ${LOG_SENDER_SCRIPT} "${BASE_LOGS_DIR}/{{ $subDir }}" {{ $feedName | quote }} "${DESTINATION_URL}" \
+    --file-regex "${FILE_REGEX}" \
+    --system {{ $.Values.logSender.attributes.system | quote }} \
+    --environment {{ $.Values.logSender.attributes.environment | quote }} \
+    -H "OriginalHost:${HOSTNAME}" \
+    --headers "${LOG_SENDER_HEADERS}" \
+    --delete-after-sending --no-secure > /dev/stdout
+    {{- end }}
+  {{- end }}

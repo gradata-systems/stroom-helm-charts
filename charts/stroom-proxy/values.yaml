@@ -51,6 +51,11 @@ logSender:
       cpu: 1000m
       memory: 64Mi
 
+receive:
+  authenticationRequired: false
+  certificateAuthentication:
+    enabled: false
+
 stroom:
   baseUri: http://stroom-node.stroom.svc:8080
   paths:
@@ -138,6 +143,27 @@ ports:
   admin: 8091
   debug: 10766
 
+tls:
+  # Enable TLS for the backend proxy service
+  enabled: false
+  secretName: ""
+
+ingress:
+  enabled: true
+  className: nginx
+  hostName: "" # stroom-proxy.example.com
+  annotations: { } # Extra annotations to add to the Ingress resource
+  # Maximum size of an HTTP POST to the ingress. Ensure this is large enough to cater for posted event files
+  maxClientBodySize: 10g
+  tls:
+    secretName: ""
+
+# Override Dropwizard server properties: https://www.dropwizard.io/en/latest/manual/configuration.html#all
+serverProperties: { }
+#  idleThreadTimeout: 1 minute
+
+takeOwnershipOnStartup: false
+
 volumeClaims:
   # Local proxy storage. Recommend using fast storage tier especially when aggregation is enabled
   data: { }
@@ -166,23 +192,6 @@ extraVolumes: [ ]
 extraVolumeMounts: [ ]
 #  - mountPath: /stroom-proxy/data
 #    name: data
-
-tls:
-  # Enable TLS for the backend proxy service
-  enabled: false
-  secretName: ""
-
-ingress:
-  enabled: true
-  className: nginx
-  hostName: "" # stroom-proxy.example.com
-  annotations: { } # Extra annotations to add to the Ingress resource
-
-  # Maximum size of an HTTP POST to the ingress. Ensure this is large enough to cater for posted event files
-  maxClientBodySize: 10g
-
-  tls:
-    secretName: ""
 
 javaOpts: -Xms512m -Xmx1g
 

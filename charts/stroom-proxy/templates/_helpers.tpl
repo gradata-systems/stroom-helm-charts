@@ -50,6 +50,13 @@ app.kubernetes.io/name: {{ include "stroom-proxy.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "stroom-proxy.serviceAccountName" -}}
+{{- .Values.serviceAccount.name | default (include "stroom-proxy.fullname" .) }}
+{{- end }}
+
 {{- define "stroom-proxy.feedStatusUrl" -}}
 {{- printf "%s%s" .Values.stroom.baseUri .Values.stroom.paths.feedStatus }}
 {{- end }}

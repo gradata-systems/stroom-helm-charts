@@ -19,6 +19,7 @@ spec:
       labels:
         {{- include "stroom-proxy.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "stroom-proxy.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- if .Values.takeOwnershipOnStartup }}

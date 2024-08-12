@@ -12,6 +12,10 @@ image:
 
 busybox:
   repository: busybox
+  tag: 1.36.1
+openssl:
+  repository: alpine/openssl
+  tag: 3.3.1
 
 nameOverride: ""
 fullnameOverride: ""
@@ -106,25 +110,6 @@ repository:
     # Maximum number of files to include in a single aggregate, before rolling over
     maxFilesPerAggregate: 10000
 
-# Used for client connections to Stroom or a downstream proxy
-keyStore:
-  type: PKCS12 # PKCS12|JKS
-  secretRef:
-    name: ""
-    key: keystore.p12
-  passwordSecretRef:
-    name: ""
-    key: ""
-
-trustStore:
-  type: PKCS12 # PKCS12, JKS
-  secretRef:
-    name: ""
-    key: truststore.p12
-  passwordSecretRef:
-    name: ""
-    key: ""
-
 restClient:
   timeout: 10s
   connectionTimeout: 10s
@@ -175,9 +160,12 @@ extraVolumeMounts: [ ]
 #    name: data
 
 tls:
-  # Enable TLS for the backend proxy service
-  enabled: false
+  # Existing TLS Secret containing the following: tls.crt, tls.key and ca.crt
   secretName: ""
+  # Secret containing the password to use for generating the keystore and truststore
+  keystorePasswordSecretRef:
+    name: ""
+    key: ""
 
 ingress:
   enabled: true

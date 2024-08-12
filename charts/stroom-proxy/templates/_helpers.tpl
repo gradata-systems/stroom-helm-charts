@@ -57,20 +57,16 @@ Create the name of the service account to use
 {{- .Values.serviceAccount.name | default (include "stroom-proxy.fullname" .) }}
 {{- end }}
 
+{{- define "stroom-proxy.image" -}}
+{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+{{- end }}
+
 {{- define "stroom-proxy.feedStatusUrl" -}}
 {{- printf "%s%s" .Values.stroom.baseUri .Values.stroom.paths.feedStatus }}
 {{- end }}
 
 {{- define "stroom-proxy.forwardUrl" -}}
 {{- .Values.forwarding.url | default (printf "%s%s" .Values.stroom.baseUri .Values.stroom.paths.datafeed) }}
-{{- end }}
-
-{{- define "stroom-proxy.trustStorePath" -}}
-{{- print "/stroom-proxy/pki/" .Values.trustStore.secretRef.key }}
-{{- end }}
-
-{{- define "stroom-proxy.keyStorePath" -}}
-{{- print "/stroom-proxy/pki/" .Values.keyStore.secretRef.key }}
 {{- end }}
 
 {{- define "stroom-proxy.localDataVolumeMounts" -}}

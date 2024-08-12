@@ -22,10 +22,35 @@ spec:
       serviceAccountName: {{ include "stroom-proxy.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.takeOwnershipOnStartup }}
       initContainers:
+        - name: generate-keystore
+          image: {{ .Values.openssl.repository }}:{{ .Values.openssl.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              keystore_path='/data/keystore.p12'
+              echo "Creating keystore: $keystore_path"
+              openssl pkcs12 -in /opt/tls/tls.crt -inkey /opt/tls/tls.key -export -out "$keystore_path" -passout "pass:${KEYSTORE_PASSWORD}"
+
+              truststore_path='/data/truststore.p12'
+              echo "Creating truststore: $truststore_path"
+              openssl pkcs12 -in /opt/tls/ca.crt -nokeys -export -out "$truststore_path" -passout "pass:${KEYSTORE_PASSWORD}"
+          env:
+            - name: KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- toYaml .Values.tls.keystorePasswordSecretRef | nindent 18 }}
+          volumeMounts:
+            - mountPath: /data
+              name: keystore
+            - mountPath: /opt/tls
+              name: certs
+              readOnly: true
+        {{- if .Values.takeOwnershipOnStartup }}
         - name: take-ownership
-          image: {{ .Values.busybox.repository }}
+          image: {{ .Values.busybox.repository }}:{{ .Values.busybox.tag }}
           command:
             - sh
             - -c
@@ -39,17 +64,15 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          image: {{ include "stroom-proxy.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: JAVA_OPTS
               value: {{ .Values.javaOpts | quote }}
             - name: KEYSTORE_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  {{- toYaml .Values.keyStore.passwordSecretRef | nindent 18 }}
-            - name: TRUSTSTORE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  {{- toYaml .Values.trustStore.passwordSecretRef | nindent 18 }}
+                  {{- toYaml .Values.tls.keystorePasswordSecretRef | nindent 18 }}
             {{- if .Values.stroom.feedStatus.enabled }}
             - name: FEED_STATUS_API_KEY
               valueFrom:
@@ -60,21 +83,12 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            {{- if .Values.forwarding.enabled }}
-            - mountPath: {{ include "stroom-proxy.keyStorePath" . }}
-              subPath: {{ .Values.keyStore.secretRef.key }}
-              name: keystore
-              readOnly: true
-            {{- end }}
-            {{- if .Values.forwarding.enabled }}
-            - mountPath: {{ include "stroom-proxy.trustStorePath" . }}
-              subPath: {{ .Values.trustStore.secretRef.key }}
-              name: truststore
-              readOnly: true
-            {{- end }}
             - mountPath: /stroom-proxy/config/config.yml
               name: config
               subPath: config.yml
+              readOnly: true
+            - mountPath: /stroom-proxy/pki
+              name: keystore
               readOnly: true
             {{- include "stroom-proxy.localDataVolumeMounts" . | nindent 12 }}
             {{- with .Values.extraVolumeMounts }}
@@ -82,8 +96,6 @@ spec:
             {{- end }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             {{- range $name, $number := .Values.ports }}
             - name: {{ $name }}
@@ -148,12 +160,11 @@ spec:
             {{- toYaml .Values.logSender.resources | nindent 12 }}
         {{- end }}
       volumes:
+        - name: certs
+          secret:
+            secretName: {{ .Values.tls.secretName }}
         - name: keystore
-          secret:
-            secretName: {{ .Values.keyStore.secretRef.name }}
-        - name: truststore
-          secret:
-            secretName: {{ .Values.trustStore.secretRef.name }}
+          emptyDir: { }
         - name: config
           configMap:
             name: {{ include "stroom-proxy.fullname" . }}

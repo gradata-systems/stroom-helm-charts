@@ -13,17 +13,15 @@ data:
       {{- toYaml . | nindent 6 }}
       {{- end }}
       applicationConnectors:
-        - type: {{ if .Values.tls.enabled }}https{{ else }}http{{ end }}
+        - type: https
           port: {{ .Values.ports.app }}
-          {{- if .Values.tls.enabled }}
-          keyStoreType: {{ .Values.keyStore.type }}
-          keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
+          keyStoreType: PKCS12
+          keyStorePath: /stroom-proxy/pki/keystore.p12
           keyStorePassword: ${KEYSTORE_PASSWORD}
-          trustStoreType: {{ .Values.trustStore.type }}
-          trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
-          trustStorePassword: ${TRUSTSTORE_PASSWORD}
+          trustStoreType: PKCS12
+          trustStorePath: /stroom-proxy/pki/truststore.p12
+          trustStorePassword: ${KEYSTORE_PASSWORD}
           validateCerts: false
-          {{- end }}
       adminConnectors:
         - type: http
           port: {{ .Values.ports.admin }}
@@ -115,12 +113,12 @@ data:
             forwardChunkSize: {{ . | int64 }}
             {{- end }}
             sslConfig:
-              keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
-              keyStorePassword: "${KEYSTORE_PASSWORD}"
-              keyStoreType: {{ .Values.keyStore.type }}
-              trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
-              trustStorePassword: "${TRUSTSTORE_PASSWORD}"
-              trustStoreType: {{ .Values.trustStore.type }}
+              keyStoreType: PKCS12
+              keyStorePath: /stroom-proxy/pki/keystore.p12
+              keyStorePassword: ${KEYSTORE_PASSWORD}
+              trustStoreType: PKCS12
+              trustStorePath: /stroom-proxy/pki/truststore.p12
+              trustStorePassword: ${KEYSTORE_PASSWORD}
               hostnameVerificationEnabled: {{ .Values.forwarding.hostVerificationEnabled }}
 
       path:
@@ -157,12 +155,12 @@ data:
         retries: {{ .retries }}
         {{- end }}
         tls:
-          keyStorePath: {{ include "stroom-proxy.keyStorePath" . }}
-          keyStorePassword: "${KEYSTORE_PASSWORD}"
-          keyStoreType: {{ .Values.keyStore.type }}
-          trustStorePath: {{ include "stroom-proxy.trustStorePath" . }}
-          trustStorePassword: "${TRUSTSTORE_PASSWORD}"
-          trustStoreType: {{ .Values.trustStore.type }}
+          keyStoreType: PKCS12
+          keyStorePath: /stroom-proxy/pki/keystore.p12
+          keyStorePassword: ${KEYSTORE_PASSWORD}
+          trustStoreType: PKCS12
+          trustStorePath: /stroom-proxy/pki/truststore.p12
+          trustStorePassword: ${KEYSTORE_PASSWORD}
           verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
           trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
     {{- if .Values.logSender.enabled }}

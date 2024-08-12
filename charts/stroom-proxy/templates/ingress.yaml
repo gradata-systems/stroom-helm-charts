@@ -30,5 +30,5 @@ spec:
               service:
                 name: {{ include "stroom-proxy.fullname" . }}
                 port:
-                  name: app
+                  name: https
 {{- end }}

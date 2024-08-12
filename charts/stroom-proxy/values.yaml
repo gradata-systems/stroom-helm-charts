@@ -119,11 +119,6 @@ restClient:
   keepAlive: 0ms
   retries: 0
 
-ports:
-  app: 8090
-  admin: 8091
-  debug: 10766
-
 # Override Dropwizard server properties: https://www.dropwizard.io/en/latest/manual/configuration.html#all
 serverProperties: { }
 #  idleThreadTimeout: 1 minute
@@ -166,6 +161,16 @@ tls:
   keystorePasswordSecretRef:
     name: ""
     key: ""
+
+ports:
+  app: 8090
+  admin: 8091
+
+service:
+  annotations: { }
+  type: ClusterIP
+  externalTrafficPolicy: ""
+  nodePort: ""
 
 ingress:
   enabled: true

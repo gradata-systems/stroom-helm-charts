@@ -97,11 +97,12 @@ spec:
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
-            {{- range $name, $number := .Values.ports }}
-            - name: {{ $name }}
-              containerPort: {{ $number }}
+            - name: app
+              containerPort: {{ .Values.ports.app }}
               protocol: TCP
-            {{- end }}
+            - name: admin
+              containerPort: {{ .Values.ports.admin }}
+              protocol: TCP
           startupProbe:
             httpGet:
               path: /proxyAdmin/filteredhealthcheck?deny=stroom.proxy.app.handler.RemoteFeedStatusService,stroom.proxy.app.handler.ForwardStreamHandlerFactory

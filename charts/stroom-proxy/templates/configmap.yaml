@@ -121,6 +121,9 @@ data:
               trustStorePassword: ${KEYSTORE_PASSWORD}
               hostnameVerificationEnabled: {{ .Values.forwarding.hostVerificationEnabled }}
 
+      logStreamConfig:
+        metaKeys: {{ join "," .Values.logging.includeMetaKeys | quote }}
+
       path:
         home: "/stroom-proxy/"
         temp: "/tmp/stroom-proxy"

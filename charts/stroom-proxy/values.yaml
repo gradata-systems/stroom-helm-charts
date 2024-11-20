@@ -29,6 +29,17 @@ logging:
   baseDir: /stroom-proxy/logs
   fileDateFormat: yyyy-MM-dd-HH-mm
 
+  # Include the following meta keys in log entries
+  includeMetaKeys:
+    - guid
+    - feed
+    - system
+    - environment
+    - remotehost
+    - remoteaddress
+    - remotedn
+    - remotecertexpiry
+
 logSender:
   enabled: true
   image:

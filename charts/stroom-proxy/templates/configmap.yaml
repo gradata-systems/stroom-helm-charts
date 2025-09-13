@@ -15,6 +15,7 @@ data:
       applicationConnectors:
         - type: https
           port: {{ .Values.ports.app }}
+          useForwardedHeaders: true
           keyStoreType: PKCS12
           keyStorePath: /stroom-proxy/pki/keystore.p12
           keyStorePassword: ${KEYSTORE_PASSWORD}
@@ -22,9 +23,14 @@ data:
           trustStorePath: /stroom-proxy/pki/truststore.p12
           trustStorePassword: ${KEYSTORE_PASSWORD}
           validateCerts: false
+          {{- if .Values.receive.authentication.enabled }}
+          wantClientAuth: true
+          {{- end }}
+          disableSniHostCheck: {{ .Values.receive.authentication.certificate.verifyHostName | not }}
       adminConnectors:
         - type: http
           port: {{ .Values.ports.admin }}
+          useForwardedHeaders: true
       requestLog:
         {{- with .Values.logging }}
         appenders:
@@ -95,68 +101,15 @@ data:
           logFormat: "%-6level [%d{\"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\",UTC}] [%t] %logger - %X{code} %msg %n"
         {{- end }}
 
-    proxyConfig:
-      feedStatus:
-        {{- if .Values.stroom.feedStatus.enabled }}
-        url: {{ include "stroom-proxy.feedStatusUrl" . | quote }}
-        apiKey: "${FEED_STATUS_API_KEY}"
-        {{- else }}
-        url: ""
-        apiKey: ""
-        {{- end }}
-
-      forwardStreamConfig:
-        forwardingEnabled: {{ .Values.forwarding.enabled }}
-        forwardDestinations:
-          - forwardUrl: {{ include "stroom-proxy.forwardUrl" . }}
-            {{- with .Values.forwarding.maxChunkSize }}
-            forwardChunkSize: {{ . | int64 }}
-            {{- end }}
-            sslConfig:
-              keyStoreType: PKCS12
-              keyStorePath: /stroom-proxy/pki/keystore.p12
-              keyStorePassword: ${KEYSTORE_PASSWORD}
-              trustStoreType: PKCS12
-              trustStorePath: /stroom-proxy/pki/truststore.p12
-              trustStorePassword: ${KEYSTORE_PASSWORD}
-              hostnameVerificationEnabled: {{ .Values.forwarding.hostVerificationEnabled }}
-
-      logStreamConfig:
-        metaKeys: {{ join "," .Values.logging.includeMetaKeys | quote }}
-
-      path:
-        home: "/stroom-proxy/"
-        temp: "/tmp/stroom-proxy"
-
-      proxyRepositoryConfig:
-        {{- with .Values.repository }}
-        storingEnabled: {{ .storing.enabled }}
-        repoDir: "/stroom-proxy/repo"
-        format: {{ .format }}
-        {{- end }}
-
-      proxyRepositoryReaderConfig:
-        {{- with .Values.repository }}
-        readCron: {{ .reader.cronSchedule | quote }}
-        maxFileScan: {{ .reader.maxFileScan }}
-        maxConcurrentMappedFiles: {{ .reader.maxConcurrentMappedFiles }}
-        maxStreamSize: {{ .aggregation.maxStreamSize | quote }}
-        maxAggregation: {{ .aggregation.maxFilesPerAggregate }}
-        {{- end }}
-        forwardThreadCount: {{ .Values.forwarding.threadCount }}
-
-      # restClient is used for making feed status REST calls
-      restClient:
-        {{- with .Values.restClient }}
-        timeout: {{ .timeout | quote }}
-        connectionTimeout: {{ .connectionTimeout | quote }}
-        timeToLive: {{ .timeToLive | quote }}
-        cookiesEnabled: false
-        maxConnections: {{ .maxConnections }}
-        maxConnectionsPerRoute: {{ .maxConnectionsPerRoute }}
-        keepAlive: {{ .keepAlive | quote }}
+    jerseyClients:
+      default:
+        {{- with .Values.stroom.feedStatus.httpClient }}
+        connectionTimeout: {{ .connectionTimeout }}
+        connectionRequestTimeout: {{ .connectionTimeout }}
+        keepAlive: {{ .keepAlive }}
         retries: {{ .retries }}
-        {{- end }}
+        timeToLive: {{ .timeToLive }}
+        timeout: {{ .timeout }}
         tls:
           keyStoreType: PKCS12
           keyStorePath: /stroom-proxy/pki/keystore.p12
@@ -164,8 +117,80 @@ data:
           trustStoreType: PKCS12
           trustStorePath: /stroom-proxy/pki/truststore.p12
           trustStorePassword: ${KEYSTORE_PASSWORD}
-          verifyHostname: {{ .Values.stroom.tls.verifyHostName }}
-          trustSelfSignedCertificates: {{ .Values.stroom.tls.trustSelfSignedCertificates }}
+          verifyHostname: {{ .tls.verifyHostName }}
+        {{- end }}
+
+    proxyConfig:
+      {{- with .Values.stroom.feedStatus }}
+      feedStatus:
+        enabled: {{ .enabled }}
+        url: {{ include "stroom-proxy.feedStatusUrl" $ | quote }}
+        apiKey: "${FEED_STATUS_API_KEY}"
+      {{- end }}
+
+      {{- with .Values.aggregation }}
+      aggregator:
+        enabled: {{ .enabled }}
+        aggregationFrequency: {{ .frequency | quote }}
+        maxItemsPerAggregate: {{ .maxItemsPerAggregate }}
+        maxUncompressedByteSize: {{ .maxUncompressedByteSize | quote }}
+        splitSources: {{ .splitSources }}
+      {{- end }}
+
+      forwardHttpDestinations:
+        {{- with .Values.forwarding }}
+        - enabled: {{ .enabled }}
+          name: default
+          forwardUrl: {{ include "stroom-proxy.forwardUrl" $ }}
+          httpClient:
+            {{- with .httpClient }}
+            connectionTimeout: {{ .connectionTimeout | quote }}
+            connectionRequestTimeout: {{ .connectionTimeout | quote }}
+            keepAlive: {{ .keepAlive | quote }}
+            retries: {{ .retries }}
+            timeToLive: {{ .timeToLive | quote }}
+            timeout: {{ .timeout | quote }}
+            validateAfterInactivityPeriod: {{ .validateAfterInactivityPeriod | quote }}
+            tls:
+              keyStoreType: PKCS12
+              keyStorePath: /stroom-proxy/pki/keystore.p12
+              keyStorePassword: ${KEYSTORE_PASSWORD}
+              trustStoreType: PKCS12
+              trustStorePath: /stroom-proxy/pki/truststore.p12
+              trustStorePassword: ${KEYSTORE_PASSWORD}
+              verifyHostname: {{ .tls.hostVerificationEnabled }}
+            {{- end }}
+          queue:
+            errorSubPathTemplate:
+              enabled: true
+              pathTemplate: {{ .directoryFormat | quote }}
+              templatingMode: "REPLACE_UNKNOWN_PARAMS"
+            forwardDelay: {{ .delay | quote }}
+            forwardThreadCount: {{ .threadCount }}
+            maxRetryAge: {{ .maxRetryAge | quote }}
+            maxRetryDelay: {{ .maxRetryDelay | quote }}
+            queueAndRetryEnabled: {{ .queueAndRetryEnabled }}
+            retryDelay: {{ .retryDelay | quote }}
+            retryDelayGrowthFactor: {{ .retryDelayGrowthFactor }}
+        {{- end }}
+
+      logStream:
+        metaKeys:
+          {{- toYaml .Values.logging.includeMetaKeys | nindent 10 }}
+
+      path:
+        data: /stroom-proxy/data
+        home: /stroom-proxy
+        temp: /tmp/stroom-proxy
+
+      receive:
+        {{- with .Values.receive.authentication }}
+        authenticationRequired: {{ .enabled }}
+        x509CertificateDnFormat: {{ .certificate.distinguishedNameFormat | quote }}
+        x509CertificateDnHeader: {{ .certificate.distinguishedNameHeader }}
+        x509CertificateHeader: {{ .certificate.header }}
+        {{- end }}
+
     {{- if .Values.logSender.enabled }}
   log-sender-headers.txt: |
     {{- range $key, $value := .Values.logSender.extraHeaders }}

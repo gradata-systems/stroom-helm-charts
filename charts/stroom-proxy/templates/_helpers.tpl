@@ -76,7 +76,7 @@ Create the name of the service account to use
 - mountPath: /stroom-proxy/logs
   subPath: logs
   name: data
-- mountPath: /stroom-proxy/repo
-  subPath: repo
+- mountPath: /stroom-proxy/data
+  subPath: data
   name: data
 {{- end }}

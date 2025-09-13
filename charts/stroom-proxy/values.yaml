@@ -13,9 +13,6 @@ image:
 busybox:
   repository: busybox
   tag: 1.36.1
-openssl:
-  repository: alpine/openssl
-  tag: 3.3.1
 
 nameOverride: ""
 fullnameOverride: ""
@@ -31,14 +28,15 @@ logging:
 
   # Include the following meta keys in log entries
   includeMetaKeys:
-    - guid
-    - feed
-    - system
-    - environment
-    - remotehost
-    - remoteaddress
-    - remotedn
-    - remotecertexpiry
+    - GUID
+    - ReceiptId
+    - Feed
+    - System
+    - Environment
+    - RemoteHost
+    - RemoteAddress
+    - RemoteDN
+    - RemoteCertExpiry
 
 logSender:
   enabled: true
@@ -70,19 +68,46 @@ stroom:
   baseUri: http://stroom-node.stroom.svc:8080
   paths:
     datafeed: /stroom/noauth/datafeed
-    feedStatus: /api/feedStatus/v1
-  # Stroom API key to enable feed status lookups.
+    feedStatus: /api/feedStatus/v2
   feedStatus:
-    enabled: true
+    enabled: false
+    # Stroom API key to enable feed status lookups.
+    # User needs the following permissions assigned in Stroom:
+    # - Application: `Check Receipt Status`
+    # - Document: `Use`
     apiKeySecretRef:
       name: ""
       key: ""
-  tls:
-    verifyHostName: true
-    trustSelfSignedCertificates: false
+    httpClient:
+      connectionTimeout: 1s
+      timeout: 1s
+      timeToLive: 1h
+      keepAlive: 0ms
+      retries: 0
+      tls:
+        verifyHostName: true
+        trustSelfSignedCertificates: false
+
+receive:
+  authentication:
+    enabled: true
+    certificate:
+      distinguishedNameFormat: OPEN_SSL # OPEN_SSL | LDAP
+      distinguishedNameHeader: ssl-client-subject-dn
+      header: ssl-client-cert
+      verifyHostName: false
+
+aggregation:
+  enabled: true
+  frequency: PT10M
+  # Maximum number of files to include in a single aggregate, before rolling over
+  maxItemsPerAggregate: 10000
+  # Stream size (uncompressed) to break at when building an aggregate
+  maxUncompressedByteSize: 1.0G
+  splitSources: true
 
 forwarding:
-  # Whether to forward to another proxy. If disabled, `clientKeyStore` and `trustStore` options are ignored.
+  # Whether to forward to a custom HTTPS destination, such as another Stroom proxy
   enabled: true
 
   # Override the forwarding URL. By default, `{stroom.baseUri}/stroom/noauth/datafeed` is used.
@@ -91,44 +116,25 @@ forwarding:
   # Number of threads to forward with
   threadCount: 4
 
-  # Perform X.509 host verification
-  hostVerificationEnabled: true
+  directoryFormat: "${feed}/${year}-${month}-${day}"
 
-  # Maximum chunk size in bytes. Set to `0` to disable chunked encoding
-  maxChunkSize: 1048576
+  delay: PT0S
+  maxRetryAge: P7D
+  maxRetryDelay: P1D
+  queueAndRetryEnabled: true
+  retryDelay: PT10M
+  retryDelayGrowthFactor: 1.0
 
-repository:
-  # Folder structure
-  format: "${pathId}/${id}"
-
-  storing:
-    enabled: true
-
-  reader:
-    # How often to scan the repository
-    cronSchedule: "* * *"
-
-    # Max number of files to scan over during forwarding. Once this limit is reached it will wait until next read interval
-    maxFileScan: 100000
-
-    # The maximum number of concurrent mapped files we can hold before we send the largest set for aggregation
-    maxConcurrentMappedFiles: 100000
-
-  aggregation:
-    # Stream size (uncompressed) to break at when building an aggregate
-    maxStreamSize: 1G
-
-    # Maximum number of files to include in a single aggregate, before rolling over
-    maxFilesPerAggregate: 10000
-
-restClient:
-  timeout: 10s
-  connectionTimeout: 10s
-  timeToLive: 1h
-  maxConnections: 1024
-  maxConnectionsPerRoute: 1024
-  keepAlive: 0ms
-  retries: 0
+  httpClient:
+    connectionTimeout: PT10S
+    retries: 0
+    timeToLive: PT1H
+    timeout: PT1H
+    keepAlive: PT0S
+    validateAfterInactivityPeriod: PT0S
+    tls:
+      # Perform X.509 host verification
+      hostVerificationEnabled: true
 
 # Override Dropwizard server properties: https://www.dropwizard.io/en/latest/manual/configuration.html#all
 serverProperties: { }
@@ -174,8 +180,8 @@ tls:
     key: ""
 
 ports:
-  app: 8090
-  admin: 8091
+  app: 8443
+  admin: 8090
 
 service:
   annotations: { }

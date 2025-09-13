@@ -205,6 +205,7 @@ data:
     --environment {{ $.Values.logSender.attributes.environment | quote }} \
     -H "OriginalHost:${HOSTNAME}" \
     --headers "${LOG_SENDER_HEADERS}" \
-    --delete-after-sending --no-secure > /dev/stdout
+    --delete-after-sending \
+    --cert /opt/tls/tls.crt --key /opt/tls/tls.key --cacert /opt/tls/ca.crt > /dev/stdout
     {{- end }}
   {{- end }}

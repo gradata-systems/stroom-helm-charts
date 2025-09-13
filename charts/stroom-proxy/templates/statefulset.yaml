@@ -152,6 +152,9 @@ spec:
               name: config
               subPath: log-sender-headers.txt
               readOnly: true
+            - mountPath: /opt/tls
+              name: certs
+              readOnly: true
           securityContext:
             runAsUser: 0
             runAsGroup: 0

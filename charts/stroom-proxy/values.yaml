@@ -12,6 +12,7 @@ image:
 
 busybox:
   repository: busybox
+  tag: 1.36.1
 
 nameOverride: ""
 fullnameOverride: ""
@@ -20,88 +21,126 @@ logging:
   level: WARN
   archive:
     enabled: true
-    maxFileCount: 90
+    maxFileCount: 3600
   timeZone: UTC
   baseDir: /stroom-proxy/logs
-  fileDateFormat: yyyy-MM-dd
+  fileDateFormat: yyyy-MM-dd-HH-mm
+
+  # Include the following meta keys in log entries
+  includeMetaKeys:
+    - GUID
+    - ReceiptId
+    - Feed
+    - System
+    - Environment
+    - RemoteHost
+    - RemoteAddress
+    - RemoteDN
+    - RemoteCertExpiry
+
+logSender:
+  enabled: true
+  image:
+    repository: gchq/stroom-log-sender
+    tag: v2.2.0
+  cronSchedule: "* * * * *"
+  fileRegex: .*\.gz$
+  sources: # Map of subdirectories to feed names
+    app: STROOM_PROXY-APP-EVENTS
+    access: STROOM_PROXY-ACCESS-EVENTS
+    receive: STROOM_PROXY-RECEIVE-EVENTS
+    send: STROOM_PROXY-SEND-EVENTS
+  attributes:
+    system: Stroom Proxy v7
+    environment: Production
+  extraHeaders: { }
+#    SecurityDomain: Unclassified
+  destinationUrl: https://stroom.example.com/stroom/datafeed
+  resources:
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 1000m
+      memory: 64Mi
 
 stroom:
   baseUri: http://stroom-node.stroom.svc:8080
-
   paths:
     datafeed: /stroom/noauth/datafeed
-    feedStatus: /api/feedStatus/v1
+    feedStatus: /api/feedStatus/v2
+  feedStatus:
+    enabled: false
+    # Stroom API key to enable feed status lookups.
+    # User needs the following permissions assigned in Stroom:
+    # - Application: `Check Receipt Status`
+    # - Document: `Use`
+    apiKeySecretRef:
+      name: ""
+      key: ""
+    httpClient:
+      connectionTimeout: 1s
+      timeout: 1s
+      timeToLive: 1h
+      keepAlive: 0ms
+      retries: 0
+      tls:
+        verifyHostName: true
+        trustSelfSignedCertificates: false
 
-  # Stroom API key to enable feed status lookups
-  apiKeySecretRef:
-    name: ""
-    key: ""
+receive:
+  authentication:
+    enabled: true
+    certificate:
+      distinguishedNameFormat: OPEN_SSL # OPEN_SSL | LDAP
+      distinguishedNameHeader: ssl-client-subject-dn
+      header: ssl-client-cert
+      verifyHostName: false
 
-  tls:
-    verifyHostName: true
-    trustSelfSignedCertificates: false
+aggregation:
+  enabled: true
+  frequency: PT10M
+  # Maximum number of files to include in a single aggregate, before rolling over
+  maxItemsPerAggregate: 10000
+  # Stream size (uncompressed) to break at when building an aggregate
+  maxUncompressedByteSize: 1.0G
+  splitSources: true
 
 forwarding:
-  # Whether to forward to another proxy. If disabled, `clientKeyStore` and `trustStore` options are ignored.
+  # Whether to forward to a custom HTTPS destination, such as another Stroom proxy
   enabled: true
 
   # Override the forwarding URL. By default, `{stroom.baseUri}/stroom/noauth/datafeed` is used.
   url: ""
 
-  tls:
-    verifyHostName: true
+  # Number of threads to forward with
+  threadCount: 4
 
-threads:
-  examineSource: 4
-  forwarding: 4
-  forwardRetry: 2
+  directoryFormat: "${feed}/${year}-${month}-${day}"
 
-db:
-  dbDir: db
+  delay: PT0S
+  maxRetryAge: P7D
+  maxRetryDelay: P1D
+  queueAndRetryEnabled: true
+  retryDelay: PT10M
+  retryDelayGrowthFactor: 1.0
 
-repository:
-  storing:
-    enabled: true
+  httpClient:
+    connectionTimeout: PT10S
+    retries: 0
+    timeToLive: PT1H
+    timeout: PT1H
+    keepAlive: PT0S
+    validateAfterInactivityPeriod: PT0S
+    tls:
+      # Perform X.509 host verification
+      hostVerificationEnabled: true
 
-  aggregation:
-    enabled: true
-    frequency: PT1M
-    maxAge: PT10M
+# Override Dropwizard server properties: https://www.dropwizard.io/en/latest/manual/configuration.html#all
+serverProperties: { }
+#  idleThreadTimeout: 1 minute
 
-    # Maximum number of files to include in a single aggregate, before rolling over
-    maxItems: 10000
-
-    # Stream size (uncompressed) to break at when building an aggregate
-    maxUncompressedSizeBytes: 1.0G
-
-# Used for client connections to Stroom or a downstream proxy
-keyStore:
-  type: PKCS12 # PKCS12|JKS
-  secretRef:
-    name: ""
-    key: keystore.jks
-  passwordSecretRef:
-    name: ""
-    key: ""
-
-trustStore:
-  type: PKCS12 # PKCS12, JKS
-  secretRef:
-    name: ""
-    key: truststore.jks
-  passwordSecretRef:
-    name: ""
-    key: ""
-
-restClient:
-  connectionTimeout: PT3S
-  verifyHostname: true
-  trustSelfSignedCertificates: false
-
-ports:
-  app: 8090
-  admin: 8091
-  debug: 10766
+takeOwnershipOnStartup: false
 
 volumeClaims:
   # Local proxy storage. Recommend using fast storage tier especially when aggregation is enabled
@@ -132,15 +171,31 @@ extraVolumeMounts: [ ]
 #  - mountPath: /stroom-proxy/data
 #    name: data
 
+tls:
+  # Existing TLS Secret containing the following: tls.crt, tls.key and ca.crt
+  secretName: ""
+  # Secret containing the password to use for generating the keystore and truststore
+  keystorePasswordSecretRef:
+    name: ""
+    key: ""
+
+ports:
+  app: 8443
+  admin: 8090
+
+service:
+  annotations: { }
+  type: ClusterIP
+  externalTrafficPolicy: ""
+  nodePort: ""
+
 ingress:
   enabled: true
   className: nginx
-  hostName: "" # stroom-proxy.example.com
+  hostName: stroom-proxy.example.com
   annotations: { } # Extra annotations to add to the Ingress resource
-
   # Maximum size of an HTTP POST to the ingress. Ensure this is large enough to cater for posted event files
   maxClientBodySize: 10g
-
   tls:
     secretName: ""
 
@@ -150,6 +205,7 @@ resources:
   requests:
     cpu: 1000m
     memory: 1Gi
+
   limits:
     cpu: 2000m
     memory: 2Gi
@@ -171,6 +227,15 @@ probeTimings:
     periodSeconds: 10
     failureThreshold: 3
 
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
 podAnnotations: { }
 
 podSecurityContext:
@@ -184,8 +249,8 @@ securityContext: { }
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+# runAsNonRoot: true
+# runAsUser: 1000
 
 nodeSelector: { }
 tolerations: [ ]

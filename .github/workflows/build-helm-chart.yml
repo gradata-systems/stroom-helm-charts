@@ -4,7 +4,9 @@ name: build-helm-chart
 # Controls when the workflow will run
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "v7.10" ]
+  pull_request:
+    branches: [ "v7.10" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

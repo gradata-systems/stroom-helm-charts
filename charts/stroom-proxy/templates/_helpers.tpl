@@ -50,20 +50,23 @@ app.kubernetes.io/name: {{ include "stroom-proxy.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
+{{/*
+Create the name of the service account to use
+*/}}
+{{- define "stroom-proxy.serviceAccountName" -}}
+{{- .Values.serviceAccount.name | default (include "stroom-proxy.fullname" .) }}
+{{- end }}
+
+{{- define "stroom-proxy.image" -}}
+{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+{{- end }}
+
 {{- define "stroom-proxy.feedStatusUrl" -}}
 {{- printf "%s%s" .Values.stroom.baseUri .Values.stroom.paths.feedStatus }}
 {{- end }}
 
 {{- define "stroom-proxy.forwardUrl" -}}
 {{- .Values.forwarding.url | default (printf "%s%s" .Values.stroom.baseUri .Values.stroom.paths.datafeed) }}
-{{- end }}
-
-{{- define "stroom-proxy.trustStorePath" -}}
-{{- print "/stroom-proxy/pki/" .Values.trustStore.secretRef.key }}
-{{- end }}
-
-{{- define "stroom-proxy.keyStorePath" -}}
-{{- print "/stroom-proxy/pki/" .Values.keyStore.secretRef.key }}
 {{- end }}
 
 {{- define "stroom-proxy.localDataVolumeMounts" -}}
@@ -76,7 +79,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 - mountPath: /stroom-proxy/logs
   subPath: logs
   name: data
-- mountPath: /stroom-proxy/repo
-  subPath: repo
+- mountPath: /stroom-proxy/data
+  subPath: data
   name: data
 {{- end }}

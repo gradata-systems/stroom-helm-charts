@@ -4,14 +4,20 @@ metadata:
   name: {{ include "stroom-proxy.fullname" . }}
   labels:
     {{- include "stroom-proxy.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.annotations | nindent 4 }}
 spec:
-  type: ClusterIP
-  ports:
-    {{- range $name, $number := .Values.ports }}
-    - port: {{ $number }}
-      targetPort: {{ $name }}
-      protocol: TCP
-      name: {{ $name }}
-    {{- end }}
   selector:
     {{- include "stroom-proxy.selectorLabels" . | nindent 4 }}
+  type: {{ .Values.service.type }}
+  {{- with .Values.service.externalTrafficPolicy }}
+  externalTrafficPolicy: {{ . }}
+  {{- end }}
+  ports:
+    - port: {{ .Values.ports.app }}
+      targetPort: app
+      protocol: TCP
+      name: https
+      {{- with .Values.service.nodePort }}
+      nodePort: {{ . }}
+      {{- end }}

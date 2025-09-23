@@ -125,6 +125,10 @@ forwarding:
   retryDelay: PT10M
   retryDelayGrowthFactor: 1.0
 
+  # Which meta keys to include in HTTP headers.
+  # Defaults: accountId, accountName, classification, component, contextEncoding, contextFormat, encoding, environment, feed, format, guid, schema, schemaVersion, system, type
+  includeHeaders: []
+
   httpClient:
     connectionTimeout: PT10S
     retries: 0

@@ -142,6 +142,10 @@ data:
         - enabled: {{ .enabled }}
           name: default
           forwardUrl: {{ include "stroom-proxy.forwardUrl" $ }}
+          {{- if .includeHeaders }}
+          forwardHeadersAdditionalAllowSet:
+            {{- toYaml .includeHeaders | nindent 12 }}
+          {{- end }}
           httpClient:
             {{- with .httpClient }}
             connectionTimeout: {{ .connectionTimeout | quote }}
